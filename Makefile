@@ -9,7 +9,8 @@ endif
 
 SAIL_RISCV_DIR=sail-riscv
 SAIL_RISCV_MODEL_DIR=$(SAIL_RISCV_DIR)/model
-SAIL_CHERI_MODEL_DIR=src
+SAIL_CHERI_MODEL_DIR=cheriot-sail
+SAIL_TRUISA_MODEL_DIR=src
 
 SAIL_RV32_XLEN := $(SAIL_RISCV_MODEL_DIR)/riscv_xlen32.sail
 SAIL_RV64_XLEN := $(SAIL_RISCV_MODEL_DIR)/riscv_xlen64.sail
@@ -228,10 +229,10 @@ ocaml_emulator/cheri_riscv_ocaml_sim_RV64 c_emulator/cheri_riscv_sim_RV64 c_emul
 all: ocaml_emulator/cheri_riscv_ocaml_sim_$(ARCH) c_emulator/cheri_riscv_sim_$(ARCH) riscv_isa riscv_coq riscv_hol riscv_rmem
 .PHONY: all
 
-csim: c_emulator/cheriot_sim
+csim: c_emulator/truisa_sim
 .PHONY: csim
 
-c_emulator/cheriot_sim: c_emulator/cheri_riscv_sim_$(ARCH)
+c_emulator/truisa_sim: c_emulator/cheri_riscv_sim_$(ARCH)
 	cp c_emulator/cheri_riscv_sim_$(ARCH) $@
 
 osim: ocaml_emulator/cheri_riscv_ocaml_sim_$(ARCH)
@@ -451,7 +452,7 @@ clean:
 	-rm -rf generated_definitions/lem-for-rmem/*
 	-make -C $(SOFTFLOAT_LIBDIR) clean
 	-make -C properties clean
-	-rm -f $(addprefix c_emulator/cheri_riscv_sim_RV,32 64)  $(addprefix c_emulator/cheri_riscv_rvfi_RV, 32 64) c_emulator/cheriot_sim
+	-rm -f $(addprefix c_emulator/cheri_riscv_sim_RV,32 64)  $(addprefix c_emulator/cheri_riscv_rvfi_RV, 32 64) c_emulator/truisa_sim
 	-rm -rf ocaml_emulator/_sbuild ocaml_emulator/_build ocaml_emulator/cheri_riscv_ocaml_sim_RV32 ocaml_emulator/cheri_riscv_ocaml_sim_RV64 ocaml_emulator/tracecmp
 	-rm -f *.gcno *.gcda
 	-Holmake cleanAll
