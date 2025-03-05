@@ -26,18 +26,20 @@ function MAX(n) = pow2(n) - 1
 val align_down : forall 'n 'm, 'n >= 1 & 'm > 'n . (int('n), bits('m)) -> bits('m)
 function align_down(n, bv) = [bv with ('n - 1) .. 0 = zeros()]
 
-/* CSR 0x0A0 */
-bitfield DLBEntryBaseReg： bits(32) = {
-    mode: 31,
+/* CSR 0x080 */
+bitfield DLBEntryBound： bits(32) = {
     radix : 30..26,
-    w_flag : 25,
-    base: 24..0,
+    W: 25,
+    bound: 24..0,
 }
 
-/* CSR 0x0B0 */
-bitfield DLBEntryBoundReg： bits(32) = {
-    reserved: 31..25,
-    bound: 24..0,
+/* CSR 0x081 */
+bitfield DLBEntryBase： bits(32) = {
+    L: 31, // Locked
+    G: 30, // Granularity. 0: Byte, 1: 128B Alignment
+    X: 28, // Instruciton execution
+    R: 26, // Write
+    Base: 24..0,
 }
 
 let DLBNumEntries = 8
@@ -45,26 +47,29 @@ type DLBIndexT = (bits(3))
 let DLBIndexMax : DLBIndexT = 0b111
 
 bitfield DLBEntry : bits(57) = {
-  mode     : 56,
-  radix    : 55..51, 
-  w_flag   : 50
-  base     : 49..25,
-  bound    : 24..0,
+  radix    : 59..55,
+  W        : 54,
+  bound    : 53..29,
+  L        : 28,
+  G        : 27,
+  X        : 26,
+  R        : 25,
+  base     : 24..0,
 }
 
 register DLBIndex : DLBIndexT
-register DLBRandom : DLBIndexT
-register DLBEntryBase : DLBEntryBaseReg
-register DLBEntryBound : DLBEntryBoundReg
+register DLBFIFO : DLBIndexT
+register CSR_DLBEntryBase : DLBEntryBase
+register CSR_DLBEntryBound : DLBEntryBound
 
-reigster DLBEntry00 ： TLBEntry
-reigster DLBEntry01 ： TLBEntry
-reigster DLBEntry02 ： TLBEntry
-reigster DLBEntry03 ： TLBEntry
-reigster DLBEntry04 ： TLBEntry
-reigster DLBEntry05 ： TLBEntry
-reigster DLBEntry06 ： TLBEntry
-reigster DLBEntry07 ： TLBEntry
+reigster DLBEntry00 ： DLBEntry
+reigster DLBEntry01 ： DLBEntry
+reigster DLBEntry02 ： DLBEntry
+reigster DLBEntry03 ： DLBEntry
+reigster DLBEntry04 ： DLBEntry
+reigster DLBEntry05 ： DLBEntry
+reigster DLBEntry06 ： DLBEntry
+reigster DLBEntry07 ： DLBEntry
 
 let DLBEntries : vector(DLBNumEntries, dec, register(DLBEntry)) = {
     ref DLBEntry07,
