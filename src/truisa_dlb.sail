@@ -8,17 +8,17 @@
 
 /* idealized generic DLB entry to model fence.vm and also speed up simulation. */
 
-val match_DLB_Entry : (bits(1), bits(5), bits(1), bits(25), bits(25), DLBEntry) > bool
+val match_DLB_Entry : (bits(1), bits(1), bits(6), bits(25), bits(25), DLBEntry) > bool
 function match_DLBEntry(mode, radix, w_flag, vaddr, mask, entry) =
   let entryMode  = entry.mode in
+  let entryW     = entry.perms_w in
   let entryRadix = entry.radix in
-  let entryW     = entry.w_flag in
   let entryBase  = entry.base in
   let entryBound = entry.bound in
   ( EntryBound != 0 &
     mode  == entryMode &
     radix == entryRadix &
-    w_flag == entryW &
+    perms_w == entryW &
     (EntryBase & mask) == (vaddr & mask) &
     (EntryBound & mask) == (vaddr & mask)
   )

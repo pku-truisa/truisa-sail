@@ -28,18 +28,19 @@ function align_down(n, bv) = [bv with ('n - 1) .. 0 = zeros()]
 
 /* CSR 0x080 */
 bitfield DLBEntryBound： bits(32) = {
-    radix : 30..26,
-    W: 25,
-    bound: 24..0,
+    mode : 31,
+    perms_w: 30,
+    radix : 29..24,
+    bound: 23..0,
 }
 
 /* CSR 0x081 */
 bitfield DLBEntryBase： bits(32) = {
-    L: 31, // Locked
-    G: 30, // Granularity. 0: Byte, 1: 128B Alignment
-    X: 28, // Instruciton execution
-    R: 26, // Write
-    Base: 24..0,
+    flags_l: 31, // Locked
+    flags_g: 30, // Granularity. 0: Byte, 1: 128B Alignment
+    perms_x: 26, // Instruciton execution
+    perms_r: 24, // Write
+    base: 23..0,
 }
 
 let DLBNumEntries = 8
@@ -48,12 +49,12 @@ let DLBIndexMax : DLBIndexT = 0b111
 
 bitfield DLBEntry : bits(57) = {
   radix    : 59..55,
-  W        : 54,
+  perms_w  : 54,
   bound    : 53..29,
-  L        : 28,
-  G        : 27,
-  X        : 26,
-  R        : 25,
+  flags_l  : 28,
+  flags_g  : 27,
+  perms_x  : 26,
+  perms_r  : 25,
   base     : 24..0,
 }
 

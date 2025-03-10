@@ -13,7 +13,7 @@
 union clause ast = TFENCE_VMA : (regidx, regidx)
 
 mapping clause encdec = TFENCE_VMA(rs1, rs2)
-  <-> 0b0001001 @ rs2 @ rs1 @ 0b000 @ 0b00000 @ 0b0001111
+  <-> 0b0001001 @ rs2 @ cs1 @ 0b000 @ 0b00000 @ 0b0001111
 
 function clause execute TFENCE_VMA(rs1, rs2) = {
   let addr : option(xlenbits) = if rs1 == 0b00000 then None() else Some(X(rs1));
@@ -26,11 +26,12 @@ mapping clause assembly = TFENCE_VMA(rs1, rs2)
   <-> "tfence.vma" ^ spc() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
 
 /* ****************************************************************** */
-union clause ast = TDLBINSERT : unit
+union clause ast = TDLBRW : unit
 
-function clause decode (0b0001010 @ 0b000000000000000000 @0b0001111) = Some(TDLBRW() : ast)
+mapping clause encdec = TDLBRW
+  <-> 0b0001010 @ 0b00000 @0bcs1 @0b000 @0b00000 @0b0001111
 
-function clause execute (TDLBRW)) = {
+function clause execute (TDLBRW) = {
   DLBWriteEntry(OLBFIFO);
 }
 
@@ -50,4 +51,4 @@ function clause execute (TSETDESCRIPTOR(cd, rs1, rs2)) = {
 }
 
 mapping clause assembly = TSETDESCRIPTOR(cd, rs1, rs2)
-  <-> "tsetdesc" ^ spc() ^ cap_reg_name(cd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
+  <-> "tsetdescr" ^ spc() ^ cap_reg_name(cd) ^ sep() ^ reg_name(rs1) ^ sep() ^ reg_name(rs2)
