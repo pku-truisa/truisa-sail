@@ -72,6 +72,7 @@ let cap_max_E_bits = to_bits(cap_E_width, sizeof(cap_max_E))
  */
 struct Capability = {
   tag                    : bool,
+  reserved32             : bits(32),
   mode                   : bits(1),  
   permit_store           : bool,
   reserved               : bits(1),
@@ -82,6 +83,7 @@ struct Capability = {
 /* The null capability is defined as all zeros, with tag unset. */
 let null_cap : Capability = struct {
   tag                    = false,
+  reserved32             = zeros(),
   mode                   = zeros(),  
   permit_store           = false,
   reserved               = zeros(),
