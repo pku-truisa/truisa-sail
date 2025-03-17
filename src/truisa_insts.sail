@@ -274,8 +274,6 @@ union clause ast = LoadCapImm : (regidx, regidx, bits(12))
  *
  * An exception is raised if:
  *   - *cs1*.**tag** is not set.
- *   - *cs1* is sealed.
- *   - *cs1*.**perms** does not grant **Permit_Load**.
  *   - *cs1*.**address** $+$ *imm* $\lt$ *cs1*.**base**.
  *   - *cs1*.**address** $+$ *imm* $+$ **CLEN** $/$ 8 $\gt$ *cs1*.**top**.
  *   - *cs1*.**address** $+$ *imm* is unaligned, regardless of whether the
@@ -287,12 +285,6 @@ function clause execute LoadCapImm(cd, cs1, imm) = {
   let vaddrBits = auth_val.address + offset;
   if not(auth_val.tag) then {
     handle_cheri_reg_exception(CapEx_TagViolation, cs1);
-    RETIRE_FAIL
-  } else if isCapSealed(auth_val) then {
-    handle_cheri_reg_exception(CapEx_SealViolation, cs1);
-    RETIRE_FAIL
-  } else if not (auth_val.permit_load) then {
-    handle_cheri_reg_exception(CapEx_PermitLoadViolation, cs1);
     RETIRE_FAIL
   } else if not(inCapBounds(auth_val, vaddrBits, cap_size)) then {
     handle_cheri_reg_exception(CapEx_BoundsViolation, cs1);
@@ -308,43 +300,8 @@ function clause execute LoadCapImm(cd, cs1, imm) = {
       match c {
         MemValue(v) => {
           var cr = v;
-          if ptw_info.ptw_lc == PTW_LC_CLEAR  | not(auth_val.permit_load_store_cap) then {
+          if ptw_info.ptw_lc == PTW_LC_CLEAR then {
             cr.tag = false;
-          };
-          if cr.tag & not(auth_val.permit_load_global) then {
-            /* Without load-global authority, the loaded cap is always local */
-            cr.global = false;
-            if not(isCapSealed(cr)) then {
-              /*
-               * Loading an unsealed capability without load global authority
-               * results in attenuation of the loaded capability's permission,
-               * transitively weakening the view through said authority.
-               *
-               * But sealing stops this transitivity.  Even if the authority
-               * lacks load global permission, a loaded sealed cap retains its
-               * load global permission, as it requires separate unsealing
-               * authority to exercise.
-               */
-              cr.permit_load_global = false;
-            }
-          };
-          if cr.tag & not(auth_val.permit_load_mutable) & not(isCapSealed(cr)) then {
-            /*
-             * Loading an unsealed capability without load mutable authority
-             * also results in attenuated permissions.  As above, sealing stops
-             * transitivity, but also the loaded sealed capability retains its
-             * store permission.
-             */
-            cr.permit_store = false;
-            cr.permit_load_mutable = false;
-          };
-          /* Sealing capabilities are excluded from revocation */
-          let isSealingCap = cr.permit_seal | cr.permit_unseal | cr.perm_user0;
-          if (cr.tag & not(isSealingCap)) then {
-            let base = getCapBaseBits(cr);
-            let granule_addr = align_down(log2_revocation_granule_size, base);
-            let revoked = mem_read_cap_revoked(granule_addr);
-            cr.tag = cr.tag & not(revoked);
           };
           C(cd) = cr;
           RETIRE_SUCCESS
@@ -368,9 +325,7 @@ union clause ast = StoreCapImm : (regidx, regidx, bits(12))
  *
  * An exception is raised if:
  *   - *cs1*.**tag** is not set.
- *   - *cs1* is sealed.
  *   - *cs1*.**perms** does not grant **Permit_Store**.
- *   - *cs1*.**perms** does not grant **Permit_Store_Capability** and
  *     *cs2*.**tag** is set.
  *   - *cs1*.**address** $+$ *imm* $\lt$ *cs1*.**base**.
  *   - *cs1*.**address** $+$ *imm* $+$ **CLEN** $/$ 8 $\gt$ *cs1*.**top**.
@@ -383,14 +338,8 @@ function clause execute StoreCapImm(cs2, cs1, imm) = {
   if not(auth_val.tag) then {
     handle_cheri_reg_exception(CapEx_TagViolation, cs1);
     RETIRE_FAIL
-  } else if isCapSealed(auth_val) then {
-    handle_cheri_reg_exception(CapEx_SealViolation, cs1);
-    RETIRE_FAIL
   } else if not (auth_val.permit_store) then {
     handle_cheri_reg_exception(CapEx_PermitStoreViolation, cs1);
-    RETIRE_FAIL
-  } else if not (auth_val.permit_load_store_cap) & cs2_val.tag then {
-    handle_cheri_reg_exception(CapEx_PermitStoreCapViolation, cs1);
     RETIRE_FAIL
   } else if not(inCapBounds(auth_val, vaddrBits, cap_size)) then {
     handle_cheri_reg_exception(CapEx_BoundsViolation, cs1);
@@ -405,8 +354,7 @@ function clause execute StoreCapImm(cs2, cs1, imm) = {
       match (eares) {
         MemException(e) => { handle_mem_exception(vaddrBits, e); RETIRE_FAIL },
         MemValue(_) => {
-          let stored_val =
-              clearTagIf(cs2_val, not (auth_val.permit_store_local_cap) & not (cs2_val.global));
+          let stored_val = cs2_val;
           let res : MemoryOpResult(bool) = mem_write_cap(addr, stored_val, false, false, false);
           match (res) {
             MemValue(true)  => RETIRE_SUCCESS,
