@@ -28,18 +28,18 @@ let  cap_perms_width = sizeof(cap_perms_width)
 /*! THIS represents capabilities as stored in memory. */
 struct EncCapability = {
   reserved32 : bits(32), /* don't need for 32-bit tagged pointer */
-  mode       : bits(1)
+  mode       : bits(1),
   perms      : bits(cap_perms_width),
-  reserved   : bits(1)
+  reserved   : bits(1),
   E          : bits(cap_E_width),
   address    : bits(cap_addr_width)
 }
 
 function capBitsToEncCapability(c) : CapBits -> EncCapability = struct {
   reserved32 = c[63..32], /* don't need for 32-bit tagged pointer */
-  mode       = c[31],
-  perms      = c[30],
-  reserved   = c[29],
+  mode       = c[31..31],
+  perms      = c[30..30],
+  reserved   = c[29..29],
   E          = c[28..24],
   address    = c[23..0]
 }
@@ -115,7 +115,9 @@ let root_cap_mem : Capability = {
 function encCapabilityToCapability(t,c) : (bool, EncCapability) -> Capability = {
   return struct {
     tag                    = t,
-    permit_store           = c.perms,
+    reserved32             = c.reserved32,
+    mode                   = c.mode,
+    permit_store           = bit_to_bool(c.perms),
     reserved               = c.reserved,
     E                      = c.E,
     address                = c.address
@@ -133,9 +135,9 @@ function capBitsToCapability(t, c) : (bool, CapBits) -> Capability = encCapabili
  */
 function capToEncCap(cap) : Capability -> EncCapability = {
   return struct {
-    reserved32 = zeros(32),
+    reserved32 = cap.reserved32,
     mode = cap.mode,
-    perms = cap.permit_store,
+    perms = bool_to_bits(cap.permit_store),
     reserved = cap.reserved,
     E = cap.E,
     address = cap.address
@@ -177,7 +179,7 @@ function getCapBounds(cap) : Capability -> (CapAddrInt, CapLen) =
  * boolean indicating whether the bounds are precisely representable, and sets
  * the address of the returned capability to the requested base.
  */
-function setCapBounds(cap, base, lenght) : (Capability, CapAddrBits, CapAddrnBits) -> (bool, Capability) = {
+function setCapBounds(cap, base, lenght) : (Capability, CapAddrBits, CapAddrBits) -> (bool, Capability) = {
   let ext_length = 0b0 @ lenght;
   let e = cap_max_E - count_leading_zeros(length);
 
@@ -203,7 +205,7 @@ function getCapPerms(cap) : Capability -> CapPermsBits = [
 
 function setCapPerms(cap, perms) : (Capability, CapPermsBits) -> Capability = {
   cap with
-  permit_store           = bit_to_bool(perms)
+  permit_store           = bit_to_bool(perms[0])
 }
 
 function getCapBaseBits(c) : Capability -> CapAddrBits =
@@ -287,13 +289,13 @@ function setCapAddr(c, addr) =
 
 /*!
  * Returns the given capability with the address set to given value. If the new
- * address is not in the representable range or the capability is sealed then
+ * address is not in the representable range
  * the tag is cleared.
  */
 val setCapAddrChecked : (Capability, CapAddrBits) -> Capability
 function setCapAddrChecked (cap, addr) =
     let (representable, newCap) = setCapAddr(cap, addr) in
-    clearTagIf(newCap, not(representable) | isCapSealed(cap))
+    clearTagIf(newCap, not(representable))
 
 infix 1 >>_s
 overload operator >> = {sail_shiftright}
@@ -309,7 +311,7 @@ function setCapOffset(c, offset) : (Capability, CapAddrBits) -> (bool, Capabilit
 
 function setCapOffsetChecked (cap, offset) : (Capability, CapAddrBits) -> Capability =
     let (representable, newCap) = setCapOffset(cap, offset) in
-    clearTagIf(newCap, not(representable) | isCapSealed(cap))
+    clearTagIf(newCap, not(representable))
 
 /*!
  * Returns the given capability with the address incremented by the given value 
@@ -328,17 +330,16 @@ function incCapAddr(c, delta) =
 val capToString : (Capability) -> string
 function capToString (cap) = {
   let len = getCapLength(cap);
-  let len_str = BitStr(to_bits(cap_len_width + 3, len));
+  let len_str = BitStr(to_bits(cap_len_width, len));
   let (base, top) = getCapBoundsBits(cap);
   let top_str = BitStr(0b000 @ top);
   BitStr(cap.address)
     ^ " (v:" ^ (if cap.tag then "1 " else "0 ")
+    ^ " m:" ^ (if bit_to_bool(cap.mode) tehn "B-Type " else "S-Type ")
     ^ BitStr(base) ^ "-" ^ top_str
     ^ " l:" ^ len_str
-    ^ " o:" ^ BitStr(cap.otype)
     ^ " p:"
     ^ (if cap.permit_store then "W" else "-")
-    /* ^ (if cap.permit_execute then "X" else "-") */
     ^ ")"
 }
 
@@ -347,7 +348,7 @@ function capToString (cap) = {
  * a capability of that length and returns a mask consisting of $e$ zeros in the
  * least significant bits and ones in the upper bits.
  */
-val getRepresentableAlignmentMask: xlenbits -> xlenbits
+val getRepresentableAlignmentMask: CapAddrBits -> xlenbits
 /*!
  * The representable alignment mask for a given length depends on the exponent
  * that would be used to represent a region of that length, assuming the base
@@ -355,7 +356,7 @@ val getRepresentableAlignmentMask: xlenbits -> xlenbits
  * [setCapBounds]
  */
 function getRepresentableAlignmentMask(len) = {
-  let (exact, c) = setCapBounds(root_cap_mem, to_bits(sizeof(xlen), 0), len);
+  let (exact, c) = setCapBounds(root_cap_mem, to_bits(sizeof(cap_addr_width), 0), len);
   var e = unsigned(c.E);
   ones(sizeof(xlen)) << e
 }
@@ -372,5 +373,5 @@ val getRepresentableLength : xlenbits -> xlenbits
  */
 function getRepresentableLength(len) = {
   let m = getRepresentableAlignmentMask(len);
-  (len + ~(m)) & m
+  ( (0b00000000 @ len ) + ~(m)) & m
 }
