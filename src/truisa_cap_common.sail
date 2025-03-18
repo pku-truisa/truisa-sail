@@ -375,3 +375,11 @@ function getRepresentableLength(len) = {
   let m = getRepresentableAlignmentMask(len);
   ( (0b00000000 @ len ) + ~(m)) & m
 }
+
+function int_to_address (len: xlenbits) -> CapAddrBits = {
+  truncate(len, cap_addr_width)
+}
+
+function address_to_int (addr: CapAddrBits) -> xlenbits = {
+  EXTS(addr)
+}

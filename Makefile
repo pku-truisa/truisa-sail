@@ -30,7 +30,7 @@ SAIL_DEFAULT_INST = $(SAIL_RISCV_MODEL_DIR)/riscv_insts_base.sail \
                     $(SAIL_RISCV_MODEL_DIR)/riscv_insts_zicsr.sail \
                     $(SAIL_RISCV_MODEL_DIR)/riscv_insts_hints.sail \
                     $(SAIL_CHERI_MODEL_DIR)/cheri_insts_begin.sail \
-                    $(SAIL_CHERI_MODEL_DIR)/cheri_insts.sail \
+                    $(SAIL_TRUISA_MODEL_DIR)/truisa_insts.sail \
                     $(SAIL_CHERI_MODEL_DIR)/cheri_insts_cext.sail \
                     $(SAIL_CHERI_MODEL_DIR)/cheri_insts_end.sail
 # $(SAIL_FD_INST) \
@@ -70,7 +70,7 @@ PRELUDE = $(SAIL_RISCV_MODEL_DIR)/prelude.sail \
           $(SAIL_VLEN) \
           $(SAIL_CHERI_MODEL_DIR)/cheri_prelude.sail \
           $(SAIL_CHERI_MODEL_DIR)/cheri_types.sail \
-          $(SAIL_CHERI_MODEL_DIR)/cheri_cap_common.sail \
+          $(SAIL_TRUISA_MODEL_DIR)/truisa_cap_common.sail \
           $(SAIL_CHERI_MODEL_DIR)/cheri_mem_metadata.sail \
           $(SAIL_RISCV_MODEL_DIR)/prelude_mem.sail
 
