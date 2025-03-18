@@ -74,7 +74,7 @@ PRELUDE = $(SAIL_RISCV_MODEL_DIR)/prelude.sail \
           $(SAIL_CHERI_MODEL_DIR)/cheri_mem_metadata.sail \
           $(SAIL_RISCV_MODEL_DIR)/prelude_mem.sail
 
-SAIL_REGS_SRCS = $(SAIL_CHERI_MODEL_DIR)/cheri_reg_type.sail \
+SAIL_REGS_SRCS = $(SAIL_TRUISA_MODEL_DIR)/truisa_reg_type.sail \
                  $(SAIL_RISCV_MODEL_DIR)/riscv_csr_map.sail \
                  $(SAIL_CHERI_MODEL_DIR)/cheri_scr_map.sail \
                  $(SAIL_CHERI_MODEL_DIR)/cheri_vmem_types.sail \
@@ -83,7 +83,7 @@ SAIL_REGS_SRCS = $(SAIL_CHERI_MODEL_DIR)/cheri_reg_type.sail \
                  $(SAIL_RISCV_MODEL_DIR)/riscv_pmp_regs.sail \
                  $(SAIL_RISCV_MODEL_DIR)/riscv_pmp_control.sail \
                  $(SAIL_CHERI_MODEL_DIR)/cheri_sys_regs.sail \
-                 $(SAIL_CHERI_MODEL_DIR)/cheri_regs.sail \
+                 $(SAIL_TRUISA_MODEL_DIR)/truisa_regs.sail \
                  $(SAIL_CHERI_MODEL_DIR)/cheri_pc_access.sail
 
 SAIL_REGS_SRCS += $(SAIL_RISCV_MODEL_DIR)/riscv_vreg_type.sail \
