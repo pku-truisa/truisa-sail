@@ -117,7 +117,7 @@ function encCapabilityToCapability(t,c) : (bool, EncCapability) -> Capability = 
     tag                    = t,
     reserved32             = c.reserved32,
     mode                   = c.mode,
-    permit_store           = bit_to_bool(c.perms),
+    permit_store           = bit_to_bool(c.perms[0]),
     reserved               = c.reserved,
     E                      = c.E,
     address                = c.address
@@ -153,7 +153,7 @@ let null_cap_bits : CapBits = capToBits(null_cap)
  * Returns the decoded base and top of the given Capability.
  */
 
-/*! In Truisa, all B-Type capability length is 2^E.
+/* In Truisa, all B-Type capability length is 2^E.
  * The base is the first address, and the bound is the last byte address. 
  */
 
@@ -181,7 +181,7 @@ function getCapBounds(cap) : Capability -> (CapAddrInt, CapLen) =
  */
 function setCapBounds(cap, base, lenght) : (Capability, CapAddrBits, CapAddrBits) -> (bool, Capability) = {
   let ext_length = 0b0 @ lenght;
-  let e = cap_max_E - count_leading_zeros(length);
+  let e = cap_max_E - count_leading_zeros(ext_length);
 
   let newCap = {cap with address = base, E = to_bits(cap_E_width, e)};
   let exact = true;
@@ -335,7 +335,7 @@ function capToString (cap) = {
   let top_str = BitStr(0b000 @ top);
   BitStr(cap.address)
     ^ " (v:" ^ (if cap.tag then "1 " else "0 ")
-    ^ " m:" ^ (if bit_to_bool(cap.mode) tehn "B-Type " else "S-Type ")
+    ^ " m:" ^ (if bit_to_bool(cap.mode[0]) then "B-Type " else "S-Type ")
     ^ BitStr(base) ^ "-" ^ top_str
     ^ " l:" ^ len_str
     ^ " p:"
@@ -366,7 +366,7 @@ function getRepresentableAlignmentMask(len) = {
  * will result in a precisely representable capability when used with a
  * base that is suitably aligned as per [getRepresentableAlignmentMask].
  */
-val getRepresentableLength : xlenbits -> xlenbits
+val getRepresentableLength : CapAddrBits -> xlenbits
 /*!
  * Given the required alignment mask returned by [getRepresentableAlignmentMask]
  * we can round up the length by bit twiddling.
@@ -376,10 +376,10 @@ function getRepresentableLength(len) = {
   ( (0b00000000 @ len ) + ~(m)) & m
 }
 
-function int_to_address (len: xlenbits) -> CapAddrBits = {
-  truncate(len, cap_addr_width)
+function int_to_address (addrint: xlenbits) -> CapAddrBits = {
+  truncate(addrint, cap_addr_width)
 }
 
-function address_to_int (addr: CapAddrBits) -> xlenbits = {
-  EXTS(addr)
+function address_to_int (addrcap: CapAddrBits) -> xlenbits = {
+  (0b00000000 @ addrcap)
 }
